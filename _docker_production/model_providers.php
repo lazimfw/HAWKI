@@ -105,7 +105,7 @@ return [
         'azure' => [
             'active' => env('AZURE_ACTIVE', true),
             'api_key' => env('AZURE_API_KEY'),
-            'api_url' => env('AZURE_API_URL', ''),
+            'api_url' => env('AZURE_API_URL', 'https://forschung-und-praktikum.openai.azure.com/openai/deployments/o3-mini/chat/completions?api-version=2025-01-01-preview'),
             'ping_url' => env('AZURE_PING_URL', ''),
             'models' => require __DIR__ . env('AZURE_MODEL_LIST_DIR', '/model_lists/azure_models.php'),
         ]

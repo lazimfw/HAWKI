@@ -101,6 +101,13 @@ return [
             'api_url' => env('OPEN_WEB_UI_API_URL', 'your_url/api/chat/completions'),
             'ping_url' => env('OPEN_WEB_UI_PING_URL', 'your_url/api/models'),
             'models' => require __DIR__ . env('OPEN_WEB_UI_MODEL_LIST_DIR', '/model_lists/openwebui_models.php'),
+        ],
+        'azure' => [
+            'active' => true,
+            'api_key' => env('AZURE_API_KEY'),
+            'api_url' => env('AZURE_URL', 'https://forschung-und-praktikum.openai.azure.com/openai/deployments/o3-mini/chat/completions?api-version=2025-01-01-preview'),
+           // 'ping_url' => env('AZURE_PING_URL', 'https://forschung-und-praktikum.openai.azure.com/openai'),
+            'models' => require __DIR__ . env('AZURE_MODEL_LIST_DIR', '/model_lists/azure_models.php'),
         ]
     ]
 ];
