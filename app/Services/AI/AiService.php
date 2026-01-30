@@ -32,6 +32,7 @@ readonly class AiService
      */
     public function getAvailableModels(?bool $external = null): AvailableAiModels
     {
+        error_log("=== FUNC 1 ===");
         $usageType = $external ? ModelUsageType::EXTERNAL_APP : ModelUsageType::DEFAULT;
         return $this->factory->getAvailableModels($usageType);
     }
@@ -46,6 +47,7 @@ readonly class AiService
      */
     public function getModel(string $modelId, ?bool $external = null): ?AiModel
     {
+        error_log("=== FUNC 2 ===");
         return $this->getAvailableModels($external)->models->getModel($modelId);
     }
     
@@ -60,10 +62,12 @@ readonly class AiService
      */
     public function getModelOrFail(string $modelId, ?bool $external = null): AiModel
     {
+        error_log("=== FUNC 3 ===");
         $model = $this->getModel($modelId, $external);
         if (!$model) {
             throw new ModelIdNotAvailableException($modelId);
         }
+        error_log("=== FUNC 3, return ===");
         return $model;
     }
     
@@ -76,6 +80,7 @@ readonly class AiService
      */
     public function sendRequest(array|AiRequest $request): AiResponse
     {
+        error_log("=== FUNC 4 ===");
         [$request, $model] = $this->resolveRequestAndModel($request);
         return $model->getClient()->sendRequest($request);
     }
@@ -91,6 +96,7 @@ readonly class AiService
      */
     public function sendStreamRequest(array|AiRequest $request, callable $onData): void
     {
+        error_log("=== FUNC 5 ===");
         [$request, $model] = $this->resolveRequestAndModel($request);
         $model->getClient()->sendStreamRequest($request, $onData);
     }
@@ -102,9 +108,12 @@ readonly class AiService
      */
     private function resolveRequestAndModel(array|AiRequest $request): array
     {
+        error_log("=== FUNC 6 ===");
         if (is_array($request)) {
             $modelId = $request['model'] ?? null;
+            error_log("=== FUNC 6: Array request, model ===");
             if (empty($modelId)) {
+                error_log("=== FUNC 6: Model not in payload ===");
                 throw new ModelNotInPayloadException($request);
             }
             $model = $this->getModelOrFail($modelId);
@@ -112,7 +121,9 @@ readonly class AiService
             return [$request, $model];
         }
         
+        error_log("=== FUNC 6: AiRequest object, model ===");
         if ($request->model === null) {
+            error_log("=== FUNC 6: last ===");
             throw new NoModelSetInRequestException();
         }
         
