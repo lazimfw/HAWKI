@@ -8,6 +8,7 @@ namespace App\Services\AI\Providers\Azure\Request;
 use App\Services\AI\Providers\AbstractRequest;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
+use App\Services\AI\Providers\Azure\AzureUrlService;
 
 class AzureNonStreamingRequest extends AbstractRequest
 {
@@ -21,6 +22,10 @@ class AzureNonStreamingRequest extends AbstractRequest
     
     public function execute(AiModel $model): AiResponse
     {
+        error_log('executeNonStreaming');
+
+        $dynamicUrl = AzureUrlService::getUrlForModel($model->getId());
+
         $this->payload['stream'] = false;
         return $this->executeNonStreamingRequest(
             model: $model,
@@ -30,7 +35,8 @@ class AzureNonStreamingRequest extends AbstractRequest
                     'text' => $data['choices'][0]['message']['content'] ?? ''
                 ],
                 usage: $this->extractUsage($model, $data)
-            )
+            ),
+            apiUrl: $dynamicUrl
         );
     }
 }

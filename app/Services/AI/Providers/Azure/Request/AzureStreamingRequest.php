@@ -6,6 +6,7 @@ namespace App\Services\AI\Providers\Azure\Request;
 use App\Services\AI\Providers\AbstractRequest;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
+use App\Services\AI\Providers\Azure\AzureUrlService;
 
 class AzureStreamingRequest extends AbstractRequest
 {
@@ -20,21 +21,30 @@ class AzureStreamingRequest extends AbstractRequest
     
     public function execute(AiModel $model): void
     {
+        error_log('executeStreaming');
         $this->payload['stream'] = true;
         $this->payload['stream_options'] = [
             'include_usage' => true,
         ];
+
+        $dynamicUrl = AzureUrlService::getUrlForModel($model->getId());
+        error_log('Using dynamic URL: ' . $dynamicUrl);
         
         $this->executeStreamingRequest(
             model: $model,
             payload: $this->payload,
             onData: $this->onData,
-            chunkToResponse: [$this, 'chunkToResponse']
+            chunkToResponse: [$this, 'chunkToResponse'],
+            apiUrl: $dynamicUrl
         );
     }
     
     protected function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
+        error_log('ChunkToResponse');
+        if ($model->getId() === 'gpt-5.1-chat') {
+        return $this->parseGpt5Chunk($chunk, $model);
+    }
         $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);
         
         if (isset($jsonChunk['error'])) {
@@ -67,5 +77,33 @@ class AzureStreamingRequest extends AbstractRequest
             usage: $usage,
             isDone: $isDone
         );
+    }
+
+    private function parseGpt5Chunk(string $chunk, AiModel $model): AiResponse
+    {
+    $jsonChunk = json_decode($chunk, true);
+    
+    if (isset($jsonChunk['error'])) {
+        return $this->createErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
+    }
+    
+    $content = '';
+    $isDone = false;
+    
+    // GPT-5.1 response format
+    if (isset($jsonChunk['output']['message']['content'])) {
+        $content = $jsonChunk['output']['message']['content'];
+    }
+    
+    if (isset($jsonChunk['status']) && $jsonChunk['status'] === 'completed') {
+        $isDone = true;
+    }
+    
+    return new AiResponse(
+        content: [
+            'text' => $content,
+        ],
+        isDone: $isDone
+    );
     }
 }

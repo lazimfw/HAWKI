@@ -21,10 +21,15 @@ readonly class AzureRequestConverter
 
     public function convertRequestToPayload(AiRequest $request): array
     {
+        error_log('ConvReqToPayLoad');
         $rawPayload = $request->payload;
         $model = $request->model;
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
+
+        // if ($modelId === 'gpt-5.1-chat'){
+        //     return $this->convertGpt5Payload($rawPayload, $model);
+        // }
 
         $messages = $this->handleModelSpecificFormatting($modelId, $messages);
 
@@ -64,11 +69,71 @@ readonly class AzureRequestConverter
             $payload['response_format'] = $rawPayload['response_format'];
         }
 
+    //     if($modelId === 'gpt-5'){
+    //         $payload['verbosity'] = "low";
+    //         $payload["reasoning_effort"] = "minimal";
+
+    //     }
+
+    //     return $payload;
+    // }
+
+    // private function convertGpt5Payload(array $rawPayload, AiModel $model): array
+    // {
+    //     error_log('Converting GPT-5.1 payload');
+    //     $messages = $rawPayload['messages'];
+    //     $conversationItems = [];
+    //     $instructions = 'You are a helpful assistant.';
+        
+    //     foreach ($messages as $message) {
+    //         if ($message['role'] === 'system') {
+    //             $instructions = $message['content']['text'] ?? $instructions;
+    //             continue;
+    //         }
+            
+    //         $content = $message['content'] ?? [];
+    //         $text = $content['text'] ?? '';
+            
+    //         $role = $message['role'] === 'assistant' ? 'agent' : $message['role'];
+            
+    //         $conversationItems[] = [
+    //             'type' => 'message',
+    //             'role' => $role,
+    //             'content' => [
+    //                 'type' => 'text',
+    //                 'text' => $text
+    //             ]
+    //         ];
+    //     }
+        
+    //     $payload = [
+    //         'conversation_items' => $conversationItems,
+    //         'instructions' => $instructions,
+    //     ];
+        
+    //     if (isset($rawPayload['temperature'])) {
+    //         $payload['temperature'] = $rawPayload['temperature'];
+    //     }
+        
+    //     if (isset($rawPayload['max_tokens'])) {
+    //         $payload['max_tokens'] = $rawPayload['max_tokens'];
+    //     }
+        
+    //     if (!isset($payload['max_tokens'])) {
+    //         $payload['max_tokens'] = $model->getConfig('max_tokens', 4096);
+    //     }
+        
+    //     if (isset($rawPayload['stream']) && $rawPayload['stream'] && $model->hasTool('stream')) {
+    //         $payload['stream'] = true;
+    //     }
+        
+    //     error_log('GPT-5.1 payload ready');
         return $payload;
     }
 
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
+        error_log('FormatMessage');
         $formatted = [
             'role' => $message['role'],
             'content' => []
@@ -92,6 +157,7 @@ readonly class AzureRequestConverter
 
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
+        error_log('ProcessAttachment');
         $attachmentService = app(AttachmentService::class);
         $skippedAttachments = [];
 
@@ -135,6 +201,7 @@ readonly class AzureRequestConverter
 
     private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
+        error_log('ProcesssImageAttachment');
         try {
             $url = $attachmentService->getFileUrl($attachment);
             return [
@@ -154,6 +221,7 @@ readonly class AzureRequestConverter
 
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
+        error_log('ProcessDocAttachment');
         try {
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
@@ -179,6 +247,7 @@ readonly class AzureRequestConverter
      */
     protected function handleModelSpecificFormatting(string $modelId, array $messages): array
     {
+        error_log('HandleModelSpecificFromatting');
         return $messages;
     }
 }

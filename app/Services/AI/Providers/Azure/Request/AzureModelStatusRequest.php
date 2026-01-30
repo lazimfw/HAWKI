@@ -19,6 +19,11 @@ class AzureModelStatusRequest extends AbstractRequest
 
     public function execute(AiModelStatusCollection $statusCollection): void
     {
+        error_log('executeModelStatus');
+        $statusCollection->setAllOnline();
+        return;
+
+        #obsolete code
         $pingUrl = $this->provider->getConfig()->getPingUrl();
         if ($pingUrl === null) {
             $statusCollection->setAllOnline();

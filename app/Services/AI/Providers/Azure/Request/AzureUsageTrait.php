@@ -17,6 +17,7 @@ trait AzureUsageTrait
      */
     protected function extractUsage(AiModel $model, array $data): ?TokenUsage
     {
+        error_log('ExtractUsage');
         if (empty($data['usage'])) {
             return null;
         }

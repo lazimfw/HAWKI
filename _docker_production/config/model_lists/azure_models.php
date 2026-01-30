@@ -19,6 +19,7 @@ return [
             'json_mode' => env('MODELS_AZURE_GPT_5_1_CHAT_TOOLS_JSON_MODE', true),
         ],
         'azure_deployment' => env('MODELS_AZURE_GPT_5_1_CHAT_DEPLOYMENT', 'gpt-5-1-chat'),
+        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/openai/responses?api-version=2025-04-01-preview',
         'max_tokens' => 16384,
     ],
     [
@@ -40,6 +41,7 @@ return [
             'json_mode' => env('MODELS_AZURE_GPT_4O_MINI_TOOLS_JSON_MODE', true),
         ],
         'azure_deployment' => env('MODELS_AZURE_GPT_4O_MINI_DEPLOYMENT', 'gpt-4o-mini'),
+        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2025-01-01-preview',
         'max_tokens' => 16384,
     ],
     [
@@ -61,6 +63,7 @@ return [
             'json_mode' => env('MODELS_AZURE_O3_MINI_TOOLS_JSON_MODE', true),
         ],
         'azure_deployment' => env('MODELS_AZURE_O3_MINI_DEPLOYMENT', 'o3-mini'),
+        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/openai/deployments/o3-mini/chat/completions?api-version=2025-01-01-preview',
         'max_tokens' => 100000,
         'reasoning_effort' => env('MODELS_AZURE_O3_MINI_REASONING_EFFORT', 'medium'), 
     ],
@@ -84,6 +87,7 @@ return [
             'image_size' => env('MODELS_AZURE_DALL_E_3_IMAGE_SIZE', '1024x1024'), 
         ],
         'azure_deployment' => env('MODELS_AZURE_DALL_E_3_DEPLOYMENT', 'dall-e-3'),
+        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01',
         'max_tokens' => 4000,
     ],
     [
@@ -105,6 +109,7 @@ return [
             'encoding_format' => env('MODELS_AZURE_TEXT_EMBEDDING_3_LARGE_ENCODING_FORMAT', 'float'),
         ],
         'azure_deployment' => env('MODELS_AZURE_TEXT_EMBEDDING_3_LARGE_DEPLOYMENT', 'text-embedding-3-large'),
+        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/',
         'max_tokens' => 8191,
     ],
 ];
