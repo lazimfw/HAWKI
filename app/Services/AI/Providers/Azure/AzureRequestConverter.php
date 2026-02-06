@@ -27,9 +27,9 @@ readonly class AzureRequestConverter
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
 
-        // if ($modelId === 'gpt-5.1-chat'){
-        //     return $this->convertGpt5Payload($rawPayload, $model);
-        // }
+        if ($modelId === 'gpt-5.1-chat') {
+            return $this->convertGpt5Payload($request);
+        }
 
         $messages = $this->handleModelSpecificFormatting($modelId, $messages);
 
@@ -69,67 +69,67 @@ readonly class AzureRequestConverter
             $payload['response_format'] = $rawPayload['response_format'];
         }
 
-    //     if($modelId === 'gpt-5'){
-    //         $payload['verbosity'] = "low";
-    //         $payload["reasoning_effort"] = "minimal";
-
-    //     }
-
-    //     return $payload;
-    // }
-
-    // private function convertGpt5Payload(array $rawPayload, AiModel $model): array
-    // {
-    //     error_log('Converting GPT-5.1 payload');
-    //     $messages = $rawPayload['messages'];
-    //     $conversationItems = [];
-    //     $instructions = 'You are a helpful assistant.';
-        
-    //     foreach ($messages as $message) {
-    //         if ($message['role'] === 'system') {
-    //             $instructions = $message['content']['text'] ?? $instructions;
-    //             continue;
-    //         }
-            
-    //         $content = $message['content'] ?? [];
-    //         $text = $content['text'] ?? '';
-            
-    //         $role = $message['role'] === 'assistant' ? 'agent' : $message['role'];
-            
-    //         $conversationItems[] = [
-    //             'type' => 'message',
-    //             'role' => $role,
-    //             'content' => [
-    //                 'type' => 'text',
-    //                 'text' => $text
-    //             ]
-    //         ];
-    //     }
-        
-    //     $payload = [
-    //         'conversation_items' => $conversationItems,
-    //         'instructions' => $instructions,
-    //     ];
-        
-    //     if (isset($rawPayload['temperature'])) {
-    //         $payload['temperature'] = $rawPayload['temperature'];
-    //     }
-        
-    //     if (isset($rawPayload['max_tokens'])) {
-    //         $payload['max_tokens'] = $rawPayload['max_tokens'];
-    //     }
-        
-    //     if (!isset($payload['max_tokens'])) {
-    //         $payload['max_tokens'] = $model->getConfig('max_tokens', 4096);
-    //     }
-        
-    //     if (isset($rawPayload['stream']) && $rawPayload['stream'] && $model->hasTool('stream')) {
-    //         $payload['stream'] = true;
-    //     }
-        
-    //     error_log('GPT-5.1 payload ready');
         return $payload;
     }
+
+  private function convertGpt5Payload(AiRequest $request): array
+{
+    error_log('Converting GPT-5.1');
+    $rawPayload = $request->payload;
+    $model = $request->model;
+    $messages = $rawPayload['messages'];
+
+    $formattedMessages = [];
+    foreach ($messages as $message) {
+        $role = $message['role'];
+        $content = $message['content'] ?? [];
+        $text = $content['text'] ?? '';
+
+        if (str_contains($text, 'INTERNAL ERROR:')) {
+            error_log('Skipping error message: ' . substr($text, 0, 100));
+            continue;
+        }
+
+        if ($role === 'user') {
+            $formattedMessages[] = [
+                'role' => 'user',
+                'content' => $text,
+            ];
+        } elseif ($role === 'assistant' || $role === 'system') {
+            $formattedMessages[] = [
+                'role' => 'assistant',
+                'content' => [[
+                    'type' => 'output_text',
+                    'text' => $text,
+                ]],
+            ];
+        }
+    }
+
+    if (empty($formattedMessages)) {
+        $formattedMessages[] = [
+            'role' => 'user',
+            'content' => 'Hello',
+        ];
+    }
+
+    $payload = [
+        'model' => 'gpt-5.1-chat',
+        'input' => $formattedMessages,
+        'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+    ];
+
+    if (isset($rawPayload['temperature'])) {
+        $payload['temperature'] = $rawPayload['temperature'];
+    }
+
+    if (isset($rawPayload['max_tokens'])) {
+        $payload['max_tokens'] = $rawPayload['max_tokens'];
+    }
+
+    error_log('GPT-5.1: ' . json_encode($payload, JSON_PRETTY_PRINT));
+    return $payload;
+}
 
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {

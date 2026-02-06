@@ -23,9 +23,11 @@ class AzureStreamingRequest extends AbstractRequest
     {
         error_log('executeStreaming');
         $this->payload['stream'] = true;
+        if ($model->getId() !== 'gpt-5.1-chat') {
         $this->payload['stream_options'] = [
             'include_usage' => true,
         ];
+        }
 
         $dynamicUrl = AzureUrlService::getUrlForModel($model->getId());
         error_log('Using dynamic URL: ' . $dynamicUrl);

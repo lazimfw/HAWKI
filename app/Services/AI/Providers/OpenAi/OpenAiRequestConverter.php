@@ -26,26 +26,21 @@ readonly class OpenAiRequestConverter
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
 
-        // Handle special cases for specific models
         $messages = $this->handleModelSpecificFormatting($modelId, $messages);
 
-        // Load and attach attachment models if any
         $attachmentsMap = $this->attachmentFinder->findAttachmentsOfMessages($messages);
 
-        // Format messages for OpenAI
         $formattedMessages = [];
         foreach ($messages as $message) {
             $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
 
-        // Build payload with common parameters
         $payload = [
             'model' => $modelId,
             'messages' => $formattedMessages,
             'stream' => isset($rawPayload['stream']) && $model->hasTool('stream'),
         ];
 
-        // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
             $payload['temperature'] = $rawPayload['temperature'];
         }
@@ -80,7 +75,6 @@ readonly class OpenAiRequestConverter
 
         $content = $message['content'] ?? [];
 
-        // Add text if present
         if (!empty($content['text'])) {
             $formatted['content'][] = [
                 'type' => 'text',
@@ -88,7 +82,6 @@ readonly class OpenAiRequestConverter
             ];
         }
 
-        // Handle attachments with permission checks
         if (!empty($content['attachments'])) {
             $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formatted['content']);
         }
@@ -104,7 +97,7 @@ readonly class OpenAiRequestConverter
         foreach ($attachmentUuids as $uuid) {
             $attachment = $attachmentsMap[$uuid] ?? null;
             if (!$attachment) {
-                continue; // skip invalid
+                continue;
             }
 
             switch ($attachment->type) {
@@ -131,7 +124,6 @@ readonly class OpenAiRequestConverter
             }
         }
 
-        // Notify about skipped attachments
         if (!empty($skippedAttachments)) {
             $content[] = [
                 'type' => 'text',
