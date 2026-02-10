@@ -67,49 +67,4 @@ return [
         'max_tokens' => 100000,
         'reasoning_effort' => env('MODELS_AZURE_O3_MINI_REASONING_EFFORT', 'medium'), 
     ],
-    [
-        'active' => env('MODELS_AZURE_DALL_E_3_ACTIVE', true),
-        'id' => 'dall-e-3',
-        'label' => 'Azure DALL-E 3',
-        "input" => [
-            "text"
-        ],
-        "output" => [
-            "image"
-        ],
-        'tools' => [
-            'stream' => false,
-            'vision' => false,
-            'file_upload' => false,
-            'image_generation' => true,
-            'image_quality' => env('MODELS_AZURE_DALL_E_3_IMAGE_QUALITY', 'standard'), 
-            'image_style' => env('MODELS_AZURE_DALL_E_3_IMAGE_STYLE', 'vivid'), 
-            'image_size' => env('MODELS_AZURE_DALL_E_3_IMAGE_SIZE', '1024x1024'), 
-        ],
-        'azure_deployment' => env('MODELS_AZURE_DALL_E_3_DEPLOYMENT', 'dall-e-3'),
-        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01',
-        'max_tokens' => 4000,
-    ],
-    [
-        'active' => env('MODELS_AZURE_TEXT_EMBEDDING_3_LARGE_ACTIVE', true),
-        'id' => 'text-embedding-3-large',
-        'label' => 'Azure Text Embedding 3 Large',
-        "input" => [
-            "text"
-        ],
-        "output" => [
-            "embedding"
-        ],
-        'tools' => [
-            'stream' => false,
-            'vision' => false,
-            'file_upload' => false,
-            'embedding' => true,
-            'dimensions' => env('MODELS_AZURE_TEXT_EMBEDDING_3_LARGE_DIMENSIONS', 3072), 
-            'encoding_format' => env('MODELS_AZURE_TEXT_EMBEDDING_3_LARGE_ENCODING_FORMAT', 'float'),
-        ],
-        'azure_deployment' => env('MODELS_AZURE_TEXT_EMBEDDING_3_LARGE_DEPLOYMENT', 'text-embedding-3-large'),
-        'azure_endpoint_type' => 'https://forschung-und-praktikum.openai.azure.com/',
-        'max_tokens' => 8191,
-    ],
 ];

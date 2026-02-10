@@ -83,8 +83,16 @@ class AzureStreamingRequest extends AbstractRequest
 
     private function parseGpt5Chunk(string $chunk, AiModel $model): AiResponse
     {
+    error_log('gpt-5.1 CHUNK : ' . substr($chunk, 0, 200));
     $jsonChunk = json_decode($chunk, true);
     
+    if (!$jsonChunk) {
+        return new AiResponse(
+            content: ['text' => ''],
+            isDone: false
+        );
+    }
+
     if (isset($jsonChunk['error'])) {
         return $this->createErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
     }
@@ -93,12 +101,27 @@ class AzureStreamingRequest extends AbstractRequest
     $isDone = false;
     
     // GPT-5.1 response format
-    if (isset($jsonChunk['output']['message']['content'])) {
-        $content = $jsonChunk['output']['message']['content'];
-    }
+    $type = $jsonChunk['type'] ?? '';
     
-    if (isset($jsonChunk['status']) && $jsonChunk['status'] === 'completed') {
-        $isDone = true;
+    switch ($type) {
+        case 'response.output_text.delta':
+            $content = $jsonChunk['delta'] ?? '';
+            error_log('GPT-5.1 DELTA: "' . $content . '"');
+            break;
+            
+        case 'response.output_text.done':
+            $content = $jsonChunk['text'] ?? '';
+            error_log('GPT-5.1 FINAL TEXT: "' . $content . '"');
+            break;
+            
+        case 'response.completed':
+            $isDone = true;
+            error_log('GPT-5.1 STREAM COMPLETED');
+            break;
+            
+        default:
+            $content = '';
+            break;
     }
     
     return new AiResponse(
