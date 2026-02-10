@@ -51,6 +51,7 @@ abstract class AbstractRequest
         });
 
         // Execute the cURL session
+        error_log("calling url ".($apiUrl ?? $model->getProvider()->getConfig()->getStreamUrl())." now");
         curl_exec($ch);
 
         // Handle errors

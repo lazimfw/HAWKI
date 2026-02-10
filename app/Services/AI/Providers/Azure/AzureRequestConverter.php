@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\AI\Providers\OpenAi;
+namespace App\Services\AI\Providers\Azure;
 
 use App\Models\Attachment;
 use App\Services\AI\Utils\MessageAttachmentFinder;
@@ -11,7 +11,7 @@ use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Support\Facades\Log;
 
 #[Singleton]
-readonly class OpenAiRequestConverter
+readonly class AzureRequestConverter
 {
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
@@ -21,10 +21,15 @@ readonly class OpenAiRequestConverter
 
     public function convertRequestToPayload(AiRequest $request): array
     {
+        error_log('ConvReqToPayLoad');
         $rawPayload = $request->payload;
         $model = $request->model;
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
+
+        if ($modelId === 'gpt-5.1-chat') {
+            return $this->convertGpt5Payload($request);
+        }
 
         $messages = $this->handleModelSpecificFormatting($modelId, $messages);
 
@@ -36,9 +41,8 @@ readonly class OpenAiRequestConverter
         }
 
         $payload = [
-            'model' => $modelId,
             'messages' => $formattedMessages,
-            'stream' => isset($rawPayload['stream']) && $model->hasTool('stream'),
+            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
 
         if (isset($rawPayload['temperature'])) {
@@ -57,17 +61,79 @@ readonly class OpenAiRequestConverter
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
 
-        if($modelId === 'gpt-5'){
-            $payload['verbosity'] = "low";
-            $payload["reasoning_effort"] = "minimal";
+        if (isset($rawPayload['max_tokens'])) {
+            $payload['max_tokens'] = $rawPayload['max_tokens'];
+        }
 
+        if (isset($rawPayload['response_format'])) {
+            $payload['response_format'] = $rawPayload['response_format'];
         }
 
         return $payload;
     }
 
+  private function convertGpt5Payload(AiRequest $request): array
+{
+    error_log('Converting GPT-5.1');
+    $rawPayload = $request->payload;
+    $model = $request->model;
+    $messages = $rawPayload['messages'];
+
+    $formattedMessages = [];
+    foreach ($messages as $message) {
+        $role = $message['role'];
+        $content = $message['content'] ?? [];
+        $text = $content['text'] ?? '';
+
+        if (str_contains($text, 'INTERNAL ERROR:')) {
+            error_log('Skipping error message: ' . substr($text, 0, 100));
+            continue;
+        }
+
+        if ($role === 'user') {
+            $formattedMessages[] = [
+                'role' => 'user',
+                'content' => $text,
+            ];
+        } elseif ($role === 'assistant' || $role === 'system') {
+            $formattedMessages[] = [
+                'role' => 'assistant',
+                'content' => [[
+                    'type' => 'output_text',
+                    'text' => $text,
+                ]],
+            ];
+        }
+    }
+
+    if (empty($formattedMessages)) {
+        $formattedMessages[] = [
+            'role' => 'user',
+            'content' => 'Hello',
+        ];
+    }
+
+    $payload = [
+        'model' => 'gpt-5.1-chat',
+        'input' => $formattedMessages,
+        'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+    ];
+
+    if (isset($rawPayload['temperature'])) {
+        $payload['temperature'] = $rawPayload['temperature'];
+    }
+
+    if (isset($rawPayload['max_tokens'])) {
+        $payload['max_tokens'] = $rawPayload['max_tokens'];
+    }
+
+    error_log('GPT-5.1: ' . json_encode($payload, JSON_PRETTY_PRINT));
+    return $payload;
+}
+
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
+        error_log('FormatMessage');
         $formatted = [
             'role' => $message['role'],
             'content' => []
@@ -91,13 +157,14 @@ readonly class OpenAiRequestConverter
 
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
+        error_log('ProcessAttachment');
         $attachmentService = app(AttachmentService::class);
         $skippedAttachments = [];
 
         foreach ($attachmentUuids as $uuid) {
             $attachment = $attachmentsMap[$uuid] ?? null;
             if (!$attachment) {
-                continue;
+                continue; 
             }
 
             switch ($attachment->type) {
@@ -134,13 +201,13 @@ readonly class OpenAiRequestConverter
 
     private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
+        error_log('ProcesssImageAttachment');
         try {
-            $file = $attachmentService->retrieve($attachment);
-            $imageData = base64_encode($file);
+            $url = $attachmentService->getFileUrl($attachment);
             return [
                 'type' => 'image_url',
                 'image_url' => [
-                    'url' => "data:{$attachment->mime};base64,{$imageData}",
+                    'url' => $url,
                 ]
             ];
         } catch (\Exception $e) {
@@ -154,6 +221,7 @@ readonly class OpenAiRequestConverter
 
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
+        error_log('ProcessDocAttachment');
         try {
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
@@ -171,7 +239,7 @@ readonly class OpenAiRequestConverter
     }
 
     /**
-     * Handle special formatting requirements for specific models
+     * Handle special formatting requirements for specific Azure models
      *
      * @param string $modelId
      * @param array $messages
@@ -179,11 +247,7 @@ readonly class OpenAiRequestConverter
      */
     protected function handleModelSpecificFormatting(string $modelId, array $messages): array
     {
-        // Special case for o1-mini: convert system to user
-        if ($modelId === 'o1-mini' && isset($messages[0]) && $messages[0]['role'] === 'system') {
-            $messages[0]['role'] = 'user';
-        }
-
+        error_log('HandleModelSpecificFromatting');
         return $messages;
     }
 }

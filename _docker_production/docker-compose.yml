@@ -26,6 +26,7 @@ services:
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
             - /var/www/html/public
+            - ../app/:/var/www/html/app/
         healthcheck:
             test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
             interval: 10s
@@ -47,6 +48,7 @@ services:
             - ./storage/app:/var/www/html/storage/app
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
+            - ../app/:/var/www/html/app/
         env_file:
             - .env
         environment:
@@ -63,6 +65,7 @@ services:
             - ./storage/app:/var/www/html/storage/app
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
+            - ../app/:/var/www/html/app/
         env_file:
             - .env
         command: [ 'php artisan reverb:start' ]
@@ -77,6 +80,7 @@ services:
             - ./storage/app:/var/www/html/storage/app
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
+            - ../app/:/var/www/html/app/
         env_file:
             - .env
         command: [ 'php artisan schedule:work' ]
@@ -141,8 +145,8 @@ services:
         volumes_from:
             - app # This will automatically mount /var/www/html/public, so we can serve the static assets
         ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
+            - "80:80"
+            - "443:443"
         depends_on:
             app:
                 condition: service_healthy
